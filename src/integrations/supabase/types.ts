@@ -20,10 +20,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      _tmp_exec_ddl: { Args: { sql: string }; Returns: undefined }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "scheduler" | "caregiver" | "billing"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +150,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "scheduler", "caregiver", "billing"],
+    },
   },
 } as const
