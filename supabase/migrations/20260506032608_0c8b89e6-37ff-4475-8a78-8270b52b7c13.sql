@@ -1,10 +1,6 @@
--- 1) Bind admin user to demo company
-UPDATE public.profiles
-SET default_company_id = 'aaa9cca1-7b18-4d68-8392-23ae53246af4',
-    onboarding_completed = true
-WHERE id = 'e07cafd8-5ce4-4e5c-936a-2b63802e1ed1';
-
--- 2) Fix infinite recursion: visits <-> caregivers cross-references
+-- Fix infinite recursion: visits <-> caregivers cross-references.
+-- The original beta-only admin-to-demo-company update was intentionally
+-- removed for clean project provisioning.
 -- Use SECURITY DEFINER helpers that bypass RLS within the policy expression.
 
 CREATE OR REPLACE FUNCTION public.is_caregiver_for_visit(_visit_id uuid)

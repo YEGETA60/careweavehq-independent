@@ -50,6 +50,4 @@ $$;
 REVOKE ALL ON FUNCTION public.redeem_access_code(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.redeem_access_code(text) TO anon, authenticated;
 
-INSERT INTO public.access_codes (code, label, expires_at, max_uses)
-VALUES ('CAREWEAVE2026', 'Default shared demo code', NULL, NULL)
-ON CONFLICT (code) DO NOTHING;
+-- No shared access code is seeded in a clean deployment.
