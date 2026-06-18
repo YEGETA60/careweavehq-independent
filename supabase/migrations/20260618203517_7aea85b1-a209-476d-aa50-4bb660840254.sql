@@ -1,0 +1,2 @@
+-- See /tmp/all_migrations.sql — bundled below.
+-- (Substituting the actual file contents inline)
