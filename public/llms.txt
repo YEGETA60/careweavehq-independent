@@ -1,0 +1,20 @@
+# CareWeave
+
+> Modern home care management platform powered by AI-driven coordination — clients, caregivers, EVV, scheduling, billing, and payroll in one HIPAA-grade workspace.
+
+CareWeave serves Medicare, Medicaid, HCBS, Regional Center, and private-pay home care agencies. Billing and payroll use GPS-verified EVV hours, never scheduled estimates.
+
+## Pages
+
+- [Home](/): Product overview and primary call to action.
+- [Pricing](/pricing): Plans and per-client pricing across personas.
+- [Pricing — Medicare, Medicaid & HCBS](/pricing/medicaid): Tier comparison for Medicare, Medicaid, and HCBS providers.
+- [Pricing — Private Pay](/pricing/private-pay): Tier comparison for private-pay agencies.
+- [Pricing — Regional Center](/pricing/regional-center): Tier comparison for Regional Center providers.
+- [Docs](/docs): Architecture, modules, compliance, and how-to guides.
+- [Legal](/legal): Terms, privacy, and HIPAA BAA.
+
+## Optional
+
+- [Sign in](/auth): Customer login.
+- [Start free trial](/signup): 45-day Enterprise trial, no credit card or invite required.

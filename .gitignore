@@ -10,15 +10,17 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
-.output
-.vinxi
-.tanstack/**
-.nitro
 *.local
 
-# Wrangler / Cloudflare
-.wrangler/
-.dev.vars
+# Local environment configuration
+.env
+.env.*
+!.env.example
+
+# Build artifacts
+CareWeave-darwin-x64.zip
+CareWeave-linux-x64.tar.gz
+CareWeave-windows-x64.zip
 
 # Editor directories and files
 .vscode/*

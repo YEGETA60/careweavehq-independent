@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.timesheet_check_locked() FROM anon, public;

@@ -1,0 +1,1 @@
+ALTER VIEW public.cta_results SET (security_invoker = true);
