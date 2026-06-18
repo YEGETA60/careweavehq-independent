@@ -38,7 +38,11 @@ BEGIN
 EXCEPTION WHEN others THEN NULL;
 END $$;
 
-DROP POLICY IF EXISTS "deny all realtime messages" ON realtime.messages;
-CREATE POLICY "deny all realtime messages" ON realtime.messages
-  FOR SELECT TO authenticated
-  USING (false);
+DO $$
+BEGIN
+  DROP POLICY IF EXISTS "deny all realtime messages" ON realtime.messages;
+  CREATE POLICY "deny all realtime messages" ON realtime.messages
+    FOR SELECT TO authenticated
+    USING (false);
+EXCEPTION WHEN others THEN NULL;
+END $$;
