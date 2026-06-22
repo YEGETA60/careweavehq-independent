@@ -64,6 +64,7 @@ export function useSubscription(): SubscriptionState {
       }));
       return;
     }
+    setState((s) => ({ ...s, loading: true }));
     const { data: prof } = await (supabase as any)
       .from("profiles").select("default_company_id").eq("id", user.id).maybeSingle();
     const cid = prof?.default_company_id ?? null;
@@ -77,7 +78,7 @@ export function useSubscription(): SubscriptionState {
 
     const isTrialing = !!sub && sub.status === "trialing" && sub.trial_ends_at && new Date(sub.trial_ends_at) > new Date();
     const effectiveTier = isTrialing
-      ? (tiers ?? []).find((t: any) => t.slug === "standard")
+      ? (tiers ?? []).find((t: any) => t.slug === "enterprise")
       : (tiers ?? []).find((t: any) => t.id === sub?.tier_id) ?? (tiers ?? []).find((t: any) => t.slug === "standard");
 
     let trialDaysLeft: number | null = null;
@@ -123,12 +124,20 @@ export function useSubscription(): SubscriptionState {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    const refresh = () => { void load(); };
+    window.addEventListener("cw:subscription-refresh", refresh);
+    return () => window.removeEventListener("cw:subscription-refresh", refresh);
+  }, [load]);
+
   const isModuleUnlocked = useCallback((moduleId: string) => {
     // Superadmins always have access to everything
     if (hasRole("superadmin")) return true;
     if (state.loading) return true; // optimistic until loaded
+    // Every module is available during an active beta trial.
+    if (state.isTrialing) return true;
     return state.includedModules.includes(moduleId);
-  }, [state.includedModules, state.loading, hasRole]);
+  }, [state.includedModules, state.isTrialing, state.loading, hasRole]);
 
   return { ...state, isModuleUnlocked, refresh: load };
 }

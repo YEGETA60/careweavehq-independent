@@ -12,6 +12,7 @@ import { Building2, CreditCard, UserCheck, CheckCircle2, Sparkles } from "lucide
 import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import { CompanyLogoUploader } from "@/components/CompanyLogoUploader";
+import { isPaymentsConfigured } from "@/lib/stripe";
 
 interface Tier {
   id: string;
@@ -29,6 +30,7 @@ export function CompanyOnboarding({ tiers, onComplete }: { tiers: Tier[]; onComp
   const [saving, setSaving] = useState(false);
   const [createdCompanyId, setCreatedCompanyId] = useState<string | null>(null);
   const [checkoutPriceId, setCheckoutPriceId] = useState<string | null>(null);
+  const paymentsConfigured = isPaymentsConfigured();
 
   // Step 1 — company
   const [legal_name, setLegalName] = useState("");
@@ -67,13 +69,16 @@ export function CompanyOnboarding({ tiers, onComplete }: { tiers: Tier[]; onComp
       // Trigger bootstrap_company_trial has already created the subscription
       // (45-day trial on the chosen tier, or past_due if this org has used a trial before).
       // Just set billing_cycle preference if a trial row exists.
-      await (supabase as any).from("company_subscriptions")
+      const { error: subscriptionError } = await (supabase as any).from("company_subscriptions")
         .update({ billing_cycle: billingCycle, tier_id: tierId })
         .eq("company_id", company.id);
+      if (subscriptionError) throw subscriptionError;
 
-      await (supabase as any).from("profiles").update({
+      const { error: profileError } = await (supabase as any).from("profiles").update({
         default_company_id: company.id, onboarding_completed: true,
       }).eq("id", user.id);
+      if (profileError) throw profileError;
+      window.dispatchEvent(new CustomEvent("cw:subscription-refresh"));
 
       // Default to "small" band on signup; webhook reconciles real band later.
       const priceId = `${chosenTier?.slug}_small_${billingCycle}`;
@@ -83,6 +88,11 @@ export function CompanyOnboarding({ tiers, onComplete }: { tiers: Tier[]; onComp
     } catch (e: any) {
       toast({ title: "Could not complete onboarding", description: e.message, variant: "destructive" });
     } finally { setSaving(false); }
+  };
+
+  const continueToDashboard = () => {
+    window.dispatchEvent(new CustomEvent("cw:subscription-refresh"));
+    onComplete();
   };
 
   const StepIcon = ({ n, icon: I, label }: any) => (
@@ -213,17 +223,23 @@ export function CompanyOnboarding({ tiers, onComplete }: { tiers: Tier[]; onComp
                 <CompanyLogoUploader companyId={createdCompanyId} />
               </div>
               <p className="text-sm text-muted-foreground">
-                Optional: add a payment method now so service continues seamlessly when your 45-day trial ends. You won't be charged during the trial.
+                Your 45-day full-access trial is active now. Adding a payment method is optional and you won't be charged during the trial.
               </p>
-              <StripeEmbeddedCheckout
-                priceId={checkoutPriceId}
-                customerEmail={email || user?.email}
-                userId={user?.id}
-                companyId={createdCompanyId}
-              />
-              <p className="text-xs text-muted-foreground text-center">
-                Until your payment method is on file, your workspace stays in read-only mode.
-              </p>
+              {paymentsConfigured ? (
+                <StripeEmbeddedCheckout
+                  priceId={checkoutPriceId}
+                  customerEmail={email || user?.email}
+                  userId={user?.id}
+                  companyId={createdCompanyId}
+                />
+              ) : (
+                <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
+                  Payments are not enabled yet. You can configure Stripe later without affecting your trial.
+                </div>
+              )}
+              <Button onClick={continueToDashboard} className="w-full">
+                Continue to dashboard
+              </Button>
             </div>
           )}
         </CardContent>
