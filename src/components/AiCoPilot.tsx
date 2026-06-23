@@ -119,7 +119,7 @@ export function AiCoPilot() {
             {!unlocked && <Badge variant="secondary" className="ml-auto text-[10px]">Pro</Badge>}
           </SheetTitle>
           <SheetDescription>
-            Ask about today's roster, draft messages, or get scheduling suggestions — powered by Lovable AI.
+            Ask about today's roster, draft messages, or get scheduling suggestions — powered by your configured AI provider.
           </SheetDescription>
         </SheetHeader>
 

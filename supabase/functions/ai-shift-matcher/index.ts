@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createChatCompletion, hasAIProvider } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -214,77 +215,72 @@ serve(async (req) => {
     candidates.sort((a, b) => b.score - a.score);
     const top = candidates.slice(0, 8);
 
-    // Ask Lovable AI to add a short rationale + final ranking
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    // Ask the configured AI provider to add a short rationale + final ranking.
     let aiRanked: any[] = top;
-    if (LOVABLE_API_KEY && top.length > 0) {
-      const aiResp = await fetch(
-        "https://ai.gateway.lovable.dev/v1/chat/completions",
+    if (hasAIProvider() && top.length > 0) {
+      const aiResp = await createChatCompletion(
         {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-3-flash-preview",
-            messages: [
-              {
-                role: "system",
-                content:
-                  "You are a homecare scheduling assistant. Rank caregivers for an open shift. Penalize day_conflict, on_time_off, and high ot_risk strongly. Reward high skills_match and certs_match. Return concise rationales (max 18 words).",
-              },
-              {
-                role: "user",
-                content: JSON.stringify({
-                  shift: {
-                    date: shift.date,
-                    start_time: shift.start_time,
-                    end_time: shift.end_time,
-                    duration_hours: shiftHours,
-                    client: client?.name,
-                    skills_required: shift.skills_required,
-                    certifications_required: shift.certifications_required,
-                  },
-                  candidates: top,
-                }),
-              },
-            ],
-            tools: [
-              {
-                type: "function",
-                function: {
-                  name: "rank_candidates",
-                  description: "Return ranked caregiver list with rationales.",
-                  parameters: {
-                    type: "object",
-                    properties: {
-                      ranked: {
-                        type: "array",
-                        items: {
-                          type: "object",
-                          properties: {
-                            id: { type: "string" },
-                            rationale: { type: "string" },
-                            recommendation: {
-                              type: "string",
-                              enum: ["best_fit", "good_fit", "backup", "not_recommended"],
-                            },
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a homecare scheduling assistant. Rank caregivers for an open shift. Penalize day_conflict, on_time_off, and high ot_risk strongly. Reward high skills_match and certs_match. Return concise rationales (max 18 words).",
+            },
+            {
+              role: "user",
+              content: JSON.stringify({
+                shift: {
+                  date: shift.date,
+                  start_time: shift.start_time,
+                  end_time: shift.end_time,
+                  duration_hours: shiftHours,
+                  client: client?.name,
+                  skills_required: shift.skills_required,
+                  certifications_required: shift.certifications_required,
+                },
+                candidates: top,
+              }),
+            },
+          ],
+          tools: [
+            {
+              type: "function",
+              function: {
+                name: "rank_candidates",
+                description: "Return ranked caregiver list with rationales.",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    ranked: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          id: { type: "string" },
+                          rationale: { type: "string" },
+                          recommendation: {
+                            type: "string",
+                            enum: ["best_fit", "good_fit", "backup", "not_recommended"],
                           },
-                          required: ["id", "rationale", "recommendation"],
-                          additionalProperties: false,
                         },
+                        required: ["id", "rationale", "recommendation"],
+                        additionalProperties: false,
                       },
                     },
-                    required: ["ranked"],
-                    additionalProperties: false,
                   },
+                  required: ["ranked"],
+                  additionalProperties: false,
                 },
               },
-            ],
-            tool_choice: { type: "function", function: { name: "rank_candidates" } },
-          }),
-        }
+            },
+          ],
+          tool_choice: { type: "function", function: { name: "rank_candidates" } },
+        },
+        {
+          lovableModel: "google/gemini-3-flash-preview",
+          directModel: "gpt-4.1-mini",
+          modelEnv: "AI_SHIFT_MODEL",
+        },
       );
 
       if (aiResp.status === 429) {
@@ -295,7 +291,7 @@ serve(async (req) => {
       }
       if (aiResp.status === 402) {
         return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Add funds in workspace settings." }),
+          JSON.stringify({ error: "AI provider credits exhausted." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }

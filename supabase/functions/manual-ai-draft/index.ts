@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createChatCompletion, hasAIProvider } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -55,8 +56,7 @@ Deno.serve(async (req) => {
       role_tags = section.role_tags ?? [];
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) return json({ error: "LOVABLE_API_KEY missing" }, 500);
+    if (!hasAIProvider()) return json({ error: "AI provider is not configured" }, 500);
 
     const system = `You are a senior technical writer for a U.S. home care operations platform called CareWeave.
 You rewrite Operations Manual sections in clear, friendly markdown.
@@ -84,21 +84,20 @@ ${change_summary}
 
 Rewrite the section body now.`;
 
-    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+    const aiRes = await createChatCompletion(
+      {
         messages: [
           { role: "system", content: system },
           { role: "user", content: userMsg },
         ],
         temperature: 0.4,
-      }),
-    });
+      },
+      {
+        lovableModel: "google/gemini-2.5-flash",
+        directModel: "gpt-4.1-mini",
+        modelEnv: "AI_MANUAL_MODEL",
+      },
+    );
 
     if (aiRes.status === 429) return json({ error: "rate_limited" }, 429);
     if (aiRes.status === 402) return json({ error: "ai_credits_exhausted" }, 402);

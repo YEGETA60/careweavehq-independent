@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createChatCompletion } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,31 +17,26 @@ function hoursBetween(a: string, b: string) {
 }
 
 async function callGateway(messages: any[]) {
-  const KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!KEY) throw new Error("LOVABLE_API_KEY missing");
-  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${KEY}`,
-      "Content-Type": "application/json",
+  const resp = await createChatCompletion(
+    { messages },
+    {
+      lovableModel: "google/gemini-2.5-flash",
+      directModel: "gpt-4.1-mini",
+      modelEnv: "AI_COPILOT_MODEL",
     },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages,
-    }),
-  });
+  );
   if (resp.status === 429) {
     const err: any = new Error("Rate limit reached. Try again shortly.");
     err.status = 429;
     throw err;
   }
   if (resp.status === 402) {
-    const err: any = new Error("AI credits exhausted. Add funds in workspace settings.");
+    const err: any = new Error("AI provider credits exhausted.");
     err.status = 402;
     throw err;
   }
   if (!resp.ok) {
-    throw new Error(`AI gateway error: ${resp.status}`);
+    throw new Error(`AI provider error: ${resp.status}`);
   }
   const json = await resp.json();
   return json.choices?.[0]?.message?.content ?? "";

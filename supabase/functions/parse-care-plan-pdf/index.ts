@@ -1,5 +1,6 @@
 // deno-lint-ignore-file
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createChatCompletion, usesDirectAIProvider } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -99,23 +100,34 @@ Deno.serve(async (req) => {
     for (let i = 0; i < buf.length; i += chunk) bin += String.fromCharCode(...buf.subarray(i, i + chunk));
     const b64 = btoa(bin);
     const mime = doc.mime_type || "application/pdf";
+    const fileContent = usesDirectAIProvider() && mime === "application/pdf"
+      ? {
+          type: "file",
+          file: {
+            filename: doc.file_name || "care-plan.pdf",
+            file_data: `data:${mime};base64,${b64}`,
+          },
+        }
+      : { type: "image_url", image_url: { url: `data:${mime};base64,${b64}` } };
 
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${Deno.env.get("LOVABLE_API_KEY")}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+    const aiResp = await createChatCompletion(
+      {
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: [
             { type: "text", text: `Extract the Care Plan from this document (${doc.file_name}). Detect program type — do not assume IHSS.` },
-            { type: "image_url", image_url: { url: `data:${mime};base64,${b64}` } },
+            fileContent,
           ]},
         ],
         tools: [TOOL_SCHEMA],
         tool_choice: { type: "function", function: { name: "extract_care_plan" } },
-      }),
-    });
+      },
+      {
+        lovableModel: "google/gemini-2.5-pro",
+        directModel: "gpt-4.1",
+        modelEnv: "AI_VISION_MODEL",
+      },
+    );
     if (!aiResp.ok) {
       const t = await aiResp.text();
       console.error("AI error", aiResp.status, t);

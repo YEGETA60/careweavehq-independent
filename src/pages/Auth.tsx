@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -142,22 +141,18 @@ export default function Auth({ initialMode = "login", initialForgotOpen = false 
   };
 
   const handleGoogle = async () => {
-    const isLocalDev = ["localhost", "127.0.0.1"].includes(window.location.hostname);
-
-    if (isLocalDev) {
-      toast.error("Google sign-in is available on the hosted app, not localhost. Use email login locally or open the Lovable preview.");
-      return;
-    }
-
     if (inIframe) {
       setShowIframeNotice(true);
       return;
     }
 
     setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (result.error) {
-      toast.error("Google sign-in failed");
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/` },
+    });
+    if (error) {
+      toast.error(error.message || "Google sign-in failed");
       setBusy(false);
     }
   };

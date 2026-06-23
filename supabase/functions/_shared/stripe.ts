@@ -11,6 +11,12 @@ export type StripeEnv = "sandbox" | "live";
 
 const GATEWAY_STRIPE_BASE = "https://connector-gateway.lovable.dev/stripe";
 
+function getDirectSecretKey(env: StripeEnv): string | undefined {
+  return env === "sandbox"
+    ? Deno.env.get("STRIPE_SANDBOX_SECRET_KEY") || Deno.env.get("STRIPE_SECRET_KEY") || undefined
+    : Deno.env.get("STRIPE_LIVE_SECRET_KEY") || Deno.env.get("STRIPE_SECRET_KEY") || undefined;
+}
+
 export function getConnectionApiKey(env: StripeEnv): string {
   return env === "sandbox"
     ? getEnv("STRIPE_SANDBOX_API_KEY")
@@ -18,6 +24,14 @@ export function getConnectionApiKey(env: StripeEnv): string {
 }
 
 export function createStripeClient(env: StripeEnv): Stripe {
+  const directSecretKey = getDirectSecretKey(env);
+  if (directSecretKey) {
+    return new Stripe(directSecretKey, {
+      apiVersion: "2026-03-25.dahlia",
+      httpClient: Stripe.createFetchHttpClient(),
+    });
+  }
+
   const connectionApiKey = getConnectionApiKey(env);
   const lovableApiKey = getEnv("LOVABLE_API_KEY");
 
@@ -41,8 +55,12 @@ export async function verifyWebhook(req: Request, env: StripeEnv): Promise<{ typ
   const signature = req.headers.get("stripe-signature");
   const body = await req.text();
   const secret = env === "sandbox"
-    ? getEnv("PAYMENTS_SANDBOX_WEBHOOK_SECRET")
-    : getEnv("PAYMENTS_LIVE_WEBHOOK_SECRET");
+    ? Deno.env.get("STRIPE_SANDBOX_WEBHOOK_SECRET") ||
+      Deno.env.get("STRIPE_WEBHOOK_SECRET") ||
+      getEnv("PAYMENTS_SANDBOX_WEBHOOK_SECRET")
+    : Deno.env.get("STRIPE_LIVE_WEBHOOK_SECRET") ||
+      Deno.env.get("STRIPE_WEBHOOK_SECRET") ||
+      getEnv("PAYMENTS_LIVE_WEBHOOK_SECRET");
 
   if (!signature || !body) throw new Error("Missing signature or body");
 

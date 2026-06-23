@@ -73,23 +73,16 @@ blocked with an upgrade card.
 ## Tech stack
 
 - Vite + React 18 + TypeScript + Tailwind + shadcn-ui
-- Lovable Cloud (Supabase) for DB, auth, storage, edge functions
-- Lovable AI Gateway for AI features (care-plan parsing, shift matching)
+- Supabase-compatible PostgreSQL, Auth, Storage, Realtime, and Edge Functions
+- Provider-neutral AI integration for care-plan parsing and shift matching
 - Capacitor for the caregiver mobile app; Electron for desktop admin
 
 ## How can I edit this code?
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Open the Lovable project linked to this repository and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
 **Use your preferred IDE**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Clone this repository, install its dependencies, and push changes through
+GitHub.
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
@@ -135,13 +128,15 @@ This project is built with:
 
 ## How can I deploy this project?
 
-Open the Lovable project linked to this repository and click Share → Publish.
+Build the frontend with `npm run build` and deploy the `dist` directory to a
+static host such as Cloudflare Pages. Deploy the database and Edge Functions
+to a Supabase project.
 
-## Can I connect a custom domain to my Lovable project?
+See [`docs/SELF_HOSTING.md`](docs/SELF_HOSTING.md) for the complete migration
+and cutover checklist.
 
-Yes, you can!
+## Can I connect a custom domain?
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Yes. Connect it at the frontend host, then add the same URL to the Supabase Auth
+site URL and redirect allowlist.
 <!-- Sync trigger: 2026-06-09 -->

@@ -230,7 +230,7 @@ export default function Docs() {
 
           <section id="copilot">
             <h2>4d. AI Co-Pilot (Pro)</h2>
-            <p>The AI Co-Pilot launcher (✨ <em>AI Co-Pilot</em>) lives in the dashboard header and is the single surface behind the landing-page promise of <em>AI co-pilot inside</em>. Powered by Lovable AI.</p>
+            <p>The AI Co-Pilot launcher (✨ <em>AI Co-Pilot</em>) lives in the dashboard header and is the single surface behind the landing-page promise of <em>AI co-pilot inside</em>. It uses the AI provider configured by the platform operator.</p>
             <ul>
               <li><strong>Why is anyone late today?</strong> — reads today's roster and EVV clock-ins, returns a plain-English explanation + next steps.</li>
               <li><strong>Draft a client / family message</strong> — generates a short, professional message for family, caregiver, or client audiences.</li>
