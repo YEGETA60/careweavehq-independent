@@ -6,5 +6,11 @@ BEGIN
   RAISE NOTICE 'auth schema owner: %', owner_name;
   RAISE NOTICE 'current_user: %', current_user;
 END $$;
-GRANT USAGE ON SCHEMA auth TO sandbox_exec;
-GRANT SELECT, REFERENCES ON auth.users TO sandbox_exec;
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'sandbox_exec') THEN
+    EXECUTE 'GRANT USAGE ON SCHEMA auth TO sandbox_exec';
+    EXECUTE 'GRANT SELECT, REFERENCES ON auth.users TO sandbox_exec';
+  END IF;
+END $$;

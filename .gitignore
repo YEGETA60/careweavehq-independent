@@ -16,6 +16,8 @@ dist-ssr
 .env
 .env.*
 !.env.example
+supabase/.temp/
+.cli-home/
 
 # Build artifacts
 CareWeave-darwin-x64.zip

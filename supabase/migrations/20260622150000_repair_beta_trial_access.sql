@@ -3,7 +3,7 @@
 -- subscription row.
 
 CREATE OR REPLACE FUNCTION public.effective_tier_for_company(_company uuid)
-RETURNS SETOF public.subscription_tiers
+RETURNS public.subscription_tiers
 LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
@@ -19,21 +19,21 @@ BEGIN
   LIMIT 1;
 
   IF _sub.id IS NULL THEN
-    RETURN QUERY
-      SELECT * FROM public.subscription_tiers
-      WHERE slug = 'standard' AND active = true
-      LIMIT 1;
-    RETURN;
+    SELECT * INTO _tier
+    FROM public.subscription_tiers
+    WHERE slug = 'standard' AND active = true
+    LIMIT 1;
+    RETURN _tier;
   END IF;
 
   IF _sub.status = 'trialing'
      AND _sub.trial_ends_at IS NOT NULL
      AND _sub.trial_ends_at > now() THEN
-    RETURN QUERY
-      SELECT * FROM public.subscription_tiers
-      WHERE slug = 'enterprise' AND active = true
-      LIMIT 1;
-    RETURN;
+    SELECT * INTO _tier
+    FROM public.subscription_tiers
+    WHERE slug = 'enterprise' AND active = true
+    LIMIT 1;
+    RETURN _tier;
   END IF;
 
   SELECT * INTO _tier
@@ -42,13 +42,12 @@ BEGIN
   LIMIT 1;
 
   IF _tier.id IS NULL THEN
-    RETURN QUERY
-      SELECT * FROM public.subscription_tiers
-      WHERE slug = 'standard' AND active = true
-      LIMIT 1;
-  ELSE
-    RETURN NEXT _tier;
+    SELECT * INTO _tier
+    FROM public.subscription_tiers
+    WHERE slug = 'standard' AND active = true
+    LIMIT 1;
   END IF;
+  RETURN _tier;
 END;
 $$;
 
